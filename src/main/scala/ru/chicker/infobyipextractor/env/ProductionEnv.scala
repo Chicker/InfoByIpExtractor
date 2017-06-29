@@ -24,21 +24,19 @@ import ru.chicker.infobyipextractor.util.{HttpWeb, HttpWebImpl}
 
 import scala.concurrent.ExecutionContext
 
-trait Production extends Env {
-
-
+trait ProductionEnv extends Env {
   override implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   override def httpWeb: Reader[Env, HttpWeb] = Reader { env =>
-    new HttpWebImpl(env.actorSystem, env.materializer)
+    new HttpWebImpl(actorSystem, materializer)
   }
 
   override def freeGeoIpProviderH: Reader[HttpWeb, InfoByIpProvider] = Reader { h =>
-    new InfoByIpFreeGeoIpProvider(h)
+    new InfoByIpFreeGeoIpProvider(env)
   }
 
   override def ip2IpProviderH: Reader[HttpWeb, InfoByIpProvider] = Reader { h =>
-    new InfoByIpIp2IpProvider(h)
+    new InfoByIpIp2IpProvider(env)
   }
 
   override def actorSystem: ActorSystem = ActorSystem()

@@ -16,13 +16,13 @@
 
 package ru.chicker.infobyipextractor.infoprovider
 
-import ru.chicker.infobyipextractor.util.HttpWeb
+import ru.chicker.infobyipextractor.env.Env
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class InfoByIpFreeGeoIpProvider(httpWeb: HttpWeb)
-                               (implicit val executionContext: ExecutionContext)
-  extends InfoByIpProvider {
+class InfoByIpFreeGeoIpProvider(env: Env) extends InfoByIpProvider {
+  private implicit val executionContext = env.executionContext
+
   override def countryCode(ipAddress: String): Future[String] = {
     import org.json4s._
     import org.json4s.native.JsonMethods._
@@ -36,8 +36,8 @@ class InfoByIpFreeGeoIpProvider(httpWeb: HttpWeb)
 
     val uri = s"http://freegeoip.net/json/$ipAddress"
 
-    httpWeb.getUriAsString(uri).map { result =>
+    env.httpWeb.map(_.getUriAsString(uri).map { result =>
       extractFn(result).toLowerCase
-    }
+    }).run(env)
   }
 }

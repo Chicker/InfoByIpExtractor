@@ -26,7 +26,7 @@ import scala.concurrent.duration._
 
 class GetInfoByIpServiceImpl(env: Env) extends GetInfoByIpService {
   private implicit val executionContext = env.executionContext
-  
+
   private val countryCodesByIpProviders = Seq(env.freeGeoIpProvider, env.ip2IpProvider)
 
   override def countryCode(ipAddress: String, fallbackTimeout: FiniteDuration = 10.seconds): Future[String] = {
@@ -53,7 +53,7 @@ class GetInfoByIpServiceImpl(env: Env) extends GetInfoByIpService {
 
       Source.fromFuture(
         akka.pattern.after(fallbackTimeout, env.actorSystem.scheduler)(Future.successful(FALLBACK_COUNTRY_CODE))) ~> merge.in(inputsCount - 1)
-      
+
       SourceShape(merge.out)
     })
 
