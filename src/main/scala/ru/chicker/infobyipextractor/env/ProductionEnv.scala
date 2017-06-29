@@ -28,7 +28,7 @@ trait ProductionEnv extends Env {
   override implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   override def httpWeb: Reader[Env, HttpWeb] = Reader { env =>
-    new HttpWebImpl(actorSystem, materializer)
+    new HttpWebImpl(env)
   }
 
   override def freeGeoIpProviderH: Reader[HttpWeb, InfoByIpProvider] = Reader { h =>

@@ -20,19 +20,20 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
 import akka.stream.ActorMaterializer
-
+import ru.chicker.infobyipextractor.env.Env
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class HttpWebImpl(val actorSystem: ActorSystem,
-                  implicit val materializer: ActorMaterializer)
-                 (implicit val executionContext: ExecutionContext)
-  extends HttpWeb {
+class HttpWebImpl(env: Env) extends HttpWeb {
   private val STRICT_ENTITY_TIMEOUT = 999.days
 
+  private implicit val actorSystem = env.actorSystem
+  private implicit val materializer = env.materializer
+  private implicit val executionContext = env.executionContext
+  
   override def getUriAsString(uri: String): Future[String] = {
-    val resp = Http(actorSystem).singleRequest(HttpRequest(uri = uri))
+    val resp = Http().singleRequest(HttpRequest(uri = uri))
 
     resp flatMap { r =>
       if (r.status == StatusCodes.OK) {
