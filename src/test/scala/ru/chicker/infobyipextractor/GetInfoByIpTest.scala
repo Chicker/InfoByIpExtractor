@@ -21,7 +21,7 @@ import akka.stream.ActorMaterializer
 import cats.data.Reader
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FunSpec, Matchers}
-import ru.chicker.infobyipextractor.env.Env
+import ru.chicker.infobyipextractor.env.{Env, Production}
 import ru.chicker.infobyipextractor.infoprovider.{InfoByIpFreeGeoIpProvider, InfoByIpIp2IpProvider, InfoByIpProvider}
 import ru.chicker.infobyipextractor.service._
 import ru.chicker.infobyipextractor.util.HttpWeb
@@ -36,7 +36,7 @@ class GetInfoByIpTest extends FunSpec with Matchers with MockFactory {
   //  private implicit val actorSystem = ActorSystem()
   //  private implicit val materializer = ActorMaterializer()
 
-  trait TestEnv extends Env {
+  object testEnv extends Env {
 
 
     override implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.global
@@ -119,7 +119,7 @@ class GetInfoByIpTest extends FunSpec with Matchers with MockFactory {
 
     val testIpAddress = "78.47.232.67"
 
-    val service = new GetInfoByIpServiceImpl() with TestEnv
+    val service = new GetInfoByIpServiceImpl(testEnv)
 
     val futCountryCode = service.countryCode(testIpAddress, fallbackTimeout = 3.seconds)
 
@@ -127,12 +127,12 @@ class GetInfoByIpTest extends FunSpec with Matchers with MockFactory {
     Await.result(futCountryCode, 4.seconds) shouldBe FALLBACK_COUNTRY_CODE
   }
 
-  //    it("integration test") {
-  //      val testIpAddress = "78.47.232.67"
-  //      val service = new GetInfoByIpServiceImpl() with Production
-  //
-  //      val futCountryCode = service.countryCode(testIpAddress, fallbackTimeout = 3.seconds)
-  //
-  //      Await.result(futCountryCode, 4.seconds) shouldBe "de"
-  //    }
+//  it("integration test") {
+//    val testIpAddress = "78.47.232.67"
+//    val service = new GetInfoByIpServiceImpl(productionEnv)
+//
+//    val futCountryCode = service.countryCode(testIpAddress, fallbackTimeout = 3.seconds)
+//
+//    Await.result(futCountryCode, 4.seconds) shouldBe "de"
+//  }
 }

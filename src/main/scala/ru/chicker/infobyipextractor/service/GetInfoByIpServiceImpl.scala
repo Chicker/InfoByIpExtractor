@@ -24,11 +24,10 @@ import ru.chicker.infobyipextractor.env.Env
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class GetInfoByIpServiceImpl()
-  extends GetInfoByIpService {
-  self: Env =>
-
-  private val countryCodesByIpProviders = Seq(freeGeoIpProvider, ip2IpProvider)
+class GetInfoByIpServiceImpl(env: Env) extends GetInfoByIpService {
+  private implicit val executionContext = env.executionContext
+  
+  private val countryCodesByIpProviders = Seq(env.freeGeoIpProvider, env.ip2IpProvider)
 
   override def countryCode(ipAddress: String, fallbackTimeout: FiniteDuration = 10.seconds): Future[String] = {
     val FALLBACK_COUNTRY_CODE = "lv"
@@ -52,15 +51,13 @@ class GetInfoByIpServiceImpl()
 
       }
 
-
       Source.fromFuture(
-        akka.pattern.after(fallbackTimeout, actorSystem.scheduler)(Future.successful(FALLBACK_COUNTRY_CODE))) ~> merge.in(inputsCount - 1)
-
-
+        akka.pattern.after(fallbackTimeout, env.actorSystem.scheduler)(Future.successful(FALLBACK_COUNTRY_CODE))) ~> merge.in(inputsCount - 1)
+      
       SourceShape(merge.out)
     })
 
-    g.toMat(Sink.head[String])(Keep.right).run()(materializer)
+    g.toMat(Sink.head[String])(Keep.right).run()(env.materializer)
   }
 }
 

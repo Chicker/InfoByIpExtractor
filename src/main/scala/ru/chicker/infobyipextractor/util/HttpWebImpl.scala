@@ -26,21 +26,21 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 class HttpWebImpl(val actorSystem: ActorSystem,
-                  val materializer: ActorMaterializer)
+                  implicit val materializer: ActorMaterializer)
                  (implicit val executionContext: ExecutionContext)
   extends HttpWeb {
   private val STRICT_ENTITY_TIMEOUT = 999.days
 
   override def getUriAsString(uri: String): Future[String] = {
-    val resp = Http(actorSystem).singleRequest(HttpRequest(uri = uri))(materializer)
+    val resp = Http(actorSystem).singleRequest(HttpRequest(uri = uri))
 
     resp flatMap { r =>
       if (r.status == StatusCodes.OK) {
 
-        r.entity.toStrict(STRICT_ENTITY_TIMEOUT)(materializer).map(_.data.utf8String)
+        r.entity.toStrict(STRICT_ENTITY_TIMEOUT).map(_.data.utf8String)
       } else {
 
-        r.entity.discardBytes()(materializer)
+        r.entity.discardBytes()
         Future.failed(
           new Exception(s"Remote server at $uri has returned status code: ${r.status.value}"))
       }

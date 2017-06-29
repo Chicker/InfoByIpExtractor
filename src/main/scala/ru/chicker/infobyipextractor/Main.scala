@@ -25,12 +25,32 @@ import ru.chicker.infobyipextractor.service._
 import ru.chicker.infobyipextractor.util.{HttpWeb, HttpWebImpl}
 
 import scala.concurrent.{Await, ExecutionContext}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-object Main extends App {
+object productionEnv extends Env {
+  override implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.global
 
+  override def httpWeb: Reader[Env, HttpWeb] = Reader { env =>
+    new HttpWebImpl(actorSystem, materializer)
+  }
+
+  override def freeGeoIpProviderH: Reader[HttpWeb, InfoByIpProvider] = Reader { h =>
+    new InfoByIpFreeGeoIpProvider(h)
+  }
+
+  override def ip2IpProviderH: Reader[HttpWeb, InfoByIpProvider] = Reader { h =>
+    new InfoByIpIp2IpProvider(h)
+  }
+
+  override def actorSystem: ActorSystem = ActorSystem()
+
+  override def materializer: ActorMaterializer = ActorMaterializer()(actorSystem)
+}
+
+object Main extends App {
+  import scala.concurrent.ExecutionContext.Implicits.global
+  
   override def main(args: Array[String]): Unit = {
     try {
       // if the config will not be properly readed then `scopt` will show help usages 
@@ -38,18 +58,22 @@ object Main extends App {
       val config = Config.readConfig(args)
 
       config foreach { cfg =>
-        val service = new GetInfoByIpServiceImpl() with Production
-
-
+        val service = new GetInfoByIpServiceImpl(productionEnv)
+        
         val futCountryCode = service.countryCode(cfg.ipAddress)
 
         futCountryCode.onComplete {
           case Success(v) => println(s"country code: $v")
           case Failure(t) => println(s"Unexpected error: ${t.getLocalizedMessage}")
         }
+        
+        futCountryCode.onComplete { _ =>
+          println("Terminating actor system...")
+          productionEnv.actorSystem.terminate()
+          Await.ready(productionEnv.actorSystem.whenTerminated, Duration.Inf)
+        }
 
         Await.ready(futCountryCode, 10.seconds)
-        println("ssss")
 
         //        scala.sys.addShutdownHook {
         //          logger.info("Terminating...")
@@ -57,6 +81,7 @@ object Main extends App {
         //          Await.result(actorSystem.whenTerminated, 30 seconds)
         //          logger.info("Terminated... Bye")
         //        }
+        
       }
     } catch {
       case ex: Throwable =>
