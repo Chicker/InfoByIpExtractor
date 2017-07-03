@@ -30,14 +30,10 @@ trait Env {
   def httpWeb: Reader[Env, HttpWeb]
 
   def env: Env = this
+  
+  def freeGeoIpProvider: Reader[Env, InfoByIpProvider]
 
-  def freeGeoIpProviderH: Reader[HttpWeb, InfoByIpProvider]
-
-  def ip2IpProviderH: Reader[HttpWeb, InfoByIpProvider]
-
-  def freeGeoIpProvider: Reader[Env, InfoByIpProvider] = httpWeb.andThen(freeGeoIpProviderH)
-
-  def ip2IpProvider: Reader[Env, InfoByIpProvider] = httpWeb.andThen(ip2IpProviderH)
+  def ip2IpProvider: Reader[Env, InfoByIpProvider]
 
   def actorSystem: ActorSystem
 

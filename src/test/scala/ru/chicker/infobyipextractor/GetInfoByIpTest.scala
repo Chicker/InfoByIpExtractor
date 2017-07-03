@@ -88,7 +88,7 @@ class GetInfoByIpTest extends FunSpec with Matchers with MockFactory {
     "within 3 seconds") {
 
     object testEnv extends ProductionEnv {
-      override def freeGeoIpProviderH: Reader[HttpWeb, InfoByIpProvider] =
+      override def freeGeoIpProvider: Reader[Env, InfoByIpProvider] =
         Reader { _ =>
           val m = mock[InfoByIpProvider]
 
@@ -98,7 +98,7 @@ class GetInfoByIpTest extends FunSpec with Matchers with MockFactory {
           m
         }
 
-      override def ip2IpProviderH: Reader[HttpWeb, InfoByIpProvider] =
+      override def ip2IpProvider: Reader[Env, InfoByIpProvider] =
         Reader { _ =>
           val m = mock[InfoByIpProvider]
 
@@ -119,12 +119,12 @@ class GetInfoByIpTest extends FunSpec with Matchers with MockFactory {
     Await.result(futCountryCode, 4.seconds) shouldBe FALLBACK_COUNTRY_CODE
   }
 
-  //  it("integration test") {
-  //    val testIpAddress = "78.47.232.67"
-  //    val service = new GetInfoByIpServiceImpl(productionEnv)
-  //
-  //    val futCountryCode = service.countryCode(testIpAddress, fallbackTimeout = 3.seconds)
-  //
-  //    Await.result(futCountryCode, 4.seconds) shouldBe "de"
-  //  }
+//    it("integration test") {
+//      val testIpAddress = "78.47.232.67"
+//      val service = new GetInfoByIpServiceImpl(productionEnv)
+//
+//      val futCountryCode = service.countryCode(testIpAddress, fallbackTimeout = 3.seconds)
+//
+//      Await.result(futCountryCode, 4.seconds) shouldBe "de"
+//    }
 }

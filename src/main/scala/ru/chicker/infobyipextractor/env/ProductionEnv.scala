@@ -31,11 +31,11 @@ trait ProductionEnv extends Env {
     new HttpWebImpl(env)
   }
 
-  override def freeGeoIpProviderH: Reader[HttpWeb, InfoByIpProvider] = Reader { h =>
+  override def freeGeoIpProvider: Reader[Env, InfoByIpProvider] = Reader { env =>
     new InfoByIpFreeGeoIpProvider(env)
   }
-
-  override def ip2IpProviderH: Reader[HttpWeb, InfoByIpProvider] = Reader { h =>
+  
+  override def ip2IpProvider: Reader[Env, InfoByIpProvider] = Reader { env =>
     new InfoByIpIp2IpProvider(env)
   }
 

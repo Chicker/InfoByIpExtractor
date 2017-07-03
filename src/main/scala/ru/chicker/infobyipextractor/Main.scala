@@ -33,33 +33,26 @@ object Main extends App {
     try {
       // if the config will not be properly readed then `scopt` will show help usages 
       // and then the program will close.
-      val config = Config.readConfig(args)
+      
+      // : Option[Future[String]] 
+      val futCode = for {
+        config <- Config.readConfig(args)
+        service = new GetInfoByIpServiceImpl(productionEnv)
+      } yield service.countryCode(config.ipAddress)
 
-      config foreach { cfg =>
-        val service = new GetInfoByIpServiceImpl(productionEnv)
-
-        val futCountryCode = service.countryCode(cfg.ipAddress)
-
-        futCountryCode.onComplete {
+      futCode.foreach { fCode =>
+        fCode.onComplete {
           case Success(v) => println(s"country code: $v")
           case Failure(t) => println(s"Unexpected error: ${t.getLocalizedMessage}")
         }
 
-        futCountryCode.onComplete { _ =>
+        fCode.onComplete { _ =>
           println("Terminating actor system...")
           productionEnv.actorSystem.terminate()
           Await.ready(productionEnv.actorSystem.whenTerminated, Duration.Inf)
         }
 
-        Await.ready(futCountryCode, 10.seconds)
-
-        //        scala.sys.addShutdownHook {
-        //          logger.info("Terminating...")
-        //          actorSystem.terminate()
-        //          Await.result(actorSystem.whenTerminated, 30 seconds)
-        //          logger.info("Terminated... Bye")
-        //        }
-
+        Await.ready(fCode, 10.seconds)
       }
     } catch {
       case ex: Throwable =>
