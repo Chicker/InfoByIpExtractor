@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package ru.chicker.infobyipextractor.util
+package ru.chicker.infobyipextractor
 
-import scala.concurrent.Future
+sealed trait AppError
 
-trait HttpWeb {
-  def shutdown(): Future[Unit]
-  def getUriAsString(uri: String): Future[String]
+object AppError {
+  case class AppException(msg: String) extends Exception(msg) with AppError
+  case class CliArgumentsParsingError(msg: String = "") extends AppError {
+    override def toString: String = s"Can't parse command-line arguments!"
+  }
 }

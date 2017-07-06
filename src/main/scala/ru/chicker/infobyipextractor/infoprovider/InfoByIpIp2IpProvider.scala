@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class InfoByIpIp2IpProvider(env: Env) extends InfoByIpProvider {
   private implicit val executionContext = env.executionContext
-  
+
   override def countryCode(ipAddress: String): Future[String] = {
     import org.json4s._
     import org.json4s.native.JsonMethods._
@@ -31,14 +31,14 @@ class InfoByIpIp2IpProvider(env: Env) extends InfoByIpProvider {
     implicit lazy val formats = DefaultFormats
 
     def extractFn(json: String) =
-      (parse(json) \ "countryCode")
-        .extract[String]
-        .toLowerCase
+      (parse(json) \ "countryCode").extract[String].toLowerCase
 
     val uri = s"http://ip-api.com/json/$ipAddress"
 
-    env.httpWeb.map(_.getUriAsString(uri).map { result =>
-      extractFn(result).toLowerCase
-    }).run(env)
+    env.httpWeb
+      .map(_.getUriAsString(uri).map { result =>
+        extractFn(result).toLowerCase
+      })
+      .run(env)
   }
 }

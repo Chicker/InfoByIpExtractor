@@ -19,7 +19,7 @@ package ru.chicker.infobyipextractor
 case class Config(ipAddress: String = "")
 
 object Config {
-  private val APP_NAME = "infobyipextractor"
+  private val APP_NAME = "Information by IP-address extractor"
 
   def readConfig(args: Array[String]): Option[Config] = {
     val cliParser = new scopt.OptionParser[Config](APP_NAME) {

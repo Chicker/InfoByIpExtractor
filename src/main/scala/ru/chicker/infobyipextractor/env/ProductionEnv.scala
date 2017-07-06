@@ -19,27 +19,49 @@ package ru.chicker.infobyipextractor.env
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import cats.data.Reader
-import ru.chicker.infobyipextractor.infoprovider.{InfoByIpFreeGeoIpProvider, InfoByIpIp2IpProvider, InfoByIpProvider}
+import ru.chicker.infobyipextractor.infoprovider.{
+  InfoByIpFreeGeoIpProvider,
+  InfoByIpIp2IpProvider,
+  InfoByIpProvider
+}
 import ru.chicker.infobyipextractor.util.{HttpWeb, HttpWebImpl}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ProductionEnv extends Env {
-  override implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.global
-
   override def httpWeb: Reader[Env, HttpWeb] = Reader { env =>
     new HttpWebImpl(env)
   }
 
-  override def freeGeoIpProvider: Reader[Env, InfoByIpProvider] = Reader { env =>
-    new InfoByIpFreeGeoIpProvider(env)
+  override def freeGeoIpProvider: Reader[Env, InfoByIpProvider] = Reader {
+    env =>
+      new InfoByIpFreeGeoIpProvider(env)
   }
-  
+
   override def ip2IpProvider: Reader[Env, InfoByIpProvider] = Reader { env =>
     new InfoByIpIp2IpProvider(env)
   }
 
-  override def actorSystem: ActorSystem = ActorSystem()
+  def shutdown(): Future[Unit] = {
+    httpWeb
+      .map(h => {
+        println("shutting down the akka-http pool")
+        h.shutdown() andThen {
+          case _ =>
+            println(
+              s"The connection pool is shutdown. Terminating actor system..."
+            )
+            actorSystem.terminate()
+        }
+      })
+      .run(this)
+  }
 
-  override def materializer: ActorMaterializer = ActorMaterializer()(actorSystem)
+  override val actorSystem: ActorSystem = ActorSystem()
+
+  override val materializer: ActorMaterializer =
+    ActorMaterializer()(actorSystem)
+
+  override implicit val executionContext: ExecutionContext =
+    actorSystem.dispatcher
 }

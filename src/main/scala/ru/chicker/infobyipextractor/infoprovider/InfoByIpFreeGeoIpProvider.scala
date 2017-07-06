@@ -30,14 +30,14 @@ class InfoByIpFreeGeoIpProvider(env: Env) extends InfoByIpProvider {
     implicit lazy val formats = DefaultFormats
 
     def extractFn(json: String) =
-      (parse(json) \ "country_code")
-        .extract[String]
-        .toLowerCase
+      (parse(json) \ "country_code").extract[String].toLowerCase
 
     val uri = s"http://freegeoip.net/json/$ipAddress"
 
-    env.httpWeb.map(_.getUriAsString(uri).map { result =>
-      extractFn(result).toLowerCase
-    }).run(env)
+    env.httpWeb
+      .map(_.getUriAsString(uri).map { result =>
+        extractFn(result).toLowerCase
+      })
+      .run(env)
   }
 }

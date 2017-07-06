@@ -21,32 +21,33 @@ version := "1.0"
 scalaVersion := "2.12.2"
 
 val akkaStreamsV = "2.4.19"
-val akkaHttpV = "10.0.8"
-val json4sV = "3.5.2"
-val scalaMockV = "3.5.0"
+val akkaHttpV    = "10.0.8"
+val json4sV      = "3.5.2"
+val scalaMockV   = "3.5.0"
 
 resolvers += Resolver.bintrayRepo("hseeberger", "maven")
 
 libraryDependencies ++=
-  Seq("com.typesafe.akka" %% "akka-stream" % akkaStreamsV
-    , "com.typesafe.akka" %% "akka-http-core" % akkaHttpV
-    , "org.json4s" %% "json4s-native" % json4sV
-    , "com.github.scopt" %% "scopt" % "3.6.0"
-    , "org.typelevel" %% "cats-core" % "0.9.0"
-    , "org.scalatest" %% "scalatest" % "3.0.1" % Test
-    , "org.scalamock" %% "scalamock-scalatest-support" % scalaMockV % Test
-    , "com.typesafe.akka" %% "akka-stream-testkit" % akkaStreamsV % Test
-    , "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % Test)
-
+  Seq("com.typesafe.akka" %% "akka-stream"                 % akkaStreamsV,
+      "com.typesafe.akka" %% "akka-http-core"              % akkaHttpV,
+      "org.json4s"        %% "json4s-native"               % json4sV,
+      "com.github.scopt"  %% "scopt"                       % "3.6.0",
+      "org.typelevel"     %% "cats"                        % "0.9.0",
+      "org.scalatest"     %% "scalatest"                   % "3.0.1" % Test,
+      "org.scalamock"     %% "scalamock-scalatest-support" % scalaMockV % Test,
+      "com.typesafe.akka" %% "akka-stream-testkit"         % akkaStreamsV % Test,
+      "com.typesafe.akka" %% "akka-http-testkit"           % akkaHttpV % Test)
 
 mainClass in assembly := Some("ru.chicker.infobyipextractor.Main")
 test in assembly := {}
 
 assemblyMergeStrategy in assembly := {
-    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-    // for the Akka
-    case "reference.conf" => MergeStrategy.concat
-    case x =>
-      val oldStrategy = (assemblyMergeStrategy in assembly).value
-      oldStrategy(x)
+  case PathList("META-INF", xs @ _ *) => MergeStrategy.discard
+  // for the Akka
+  case "reference.conf" => MergeStrategy.concat
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
 }
+
+fork in compile := true

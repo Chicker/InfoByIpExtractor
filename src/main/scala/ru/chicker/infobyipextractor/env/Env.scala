@@ -26,17 +26,17 @@ import scala.concurrent.ExecutionContext
 
 trait Env {
   implicit val executionContext: ExecutionContext
-  
+
   def httpWeb: Reader[Env, HttpWeb]
 
   def env: Env = this
-  
+
   def freeGeoIpProvider: Reader[Env, InfoByIpProvider]
 
   def ip2IpProvider: Reader[Env, InfoByIpProvider]
 
-  def actorSystem: ActorSystem
+  val actorSystem: ActorSystem
 
-  def materializer: ActorMaterializer
+  val materializer: ActorMaterializer
 
 }

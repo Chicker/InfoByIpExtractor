@@ -16,50 +16,58 @@
 
 package ru.chicker.infobyipextractor
 
+import cats.data.EitherT
+import cats.implicits._
 import ru.chicker.infobyipextractor.env.ProductionEnv
 import ru.chicker.infobyipextractor.service._
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 
 object productionEnv extends ProductionEnv
 
 object Main extends App {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+  import productionEnv.executionContext
 
   override def main(args: Array[String]): Unit = {
     try {
-      // if the config will not be properly readed then `scopt` will show help usages 
-      // and then the program will close.
-      
-      // : Option[Future[String]] 
-      val futCode = for {
-        config <- Config.readConfig(args)
-        service = new GetInfoByIpServiceImpl(productionEnv)
-      } yield service.countryCode(config.ipAddress)
+      val code = getCountryCode(args)
 
-      futCode.foreach { fCode =>
-        fCode.onComplete {
-          case Success(v) => println(s"country code: $v")
-          case Failure(t) => println(s"Unexpected error: ${t.getLocalizedMessage}")
-        }
-
-        fCode.onComplete { _ =>
-          println("Terminating actor system...")
-          productionEnv.actorSystem.terminate()
-          Await.ready(productionEnv.actorSystem.whenTerminated, Duration.Inf)
-        }
-
-        Await.ready(fCode, 10.seconds)
+      code.value.onComplete {
+        case Success(res) =>
+          res match {
+            case Left(e) =>
+              println(s"Error occured when extracting country code: $e")
+            case Right(v) =>
+              println(s"country code: $v")
+          }
+        case Failure(v) => throw v
       }
+
+      Await.ready(code.value.flatMap(_ => productionEnv.shutdown()),
+                  Duration.Inf)
+
     } catch {
-      case ex: Throwable =>
-        println("While starting program an error has been occurred: \n" +
-          s"\t${ex.getLocalizedMessage}")
+      case t: Throwable =>
+        println(
+          s"While executing program an error has been occurred: ${t.getLocalizedMessage}"
+        )
     }
   }
+
+  def getCountryCode(args: Array[String]): EitherT[Future, AppError, String] = {
+    val eithConfig =
+      EitherT.fromEither[Future](
+        Config.readConfig(args).toRight(AppError.CliArgumentsParsingError())
+      )
+
+    for {
+      config <- eithConfig
+      service = GetInfoByIpServiceImpl(productionEnv)
+      out <- EitherT.right(service.countryCode(config.ipAddress))
+    } yield out
+  }
 }
-
-
