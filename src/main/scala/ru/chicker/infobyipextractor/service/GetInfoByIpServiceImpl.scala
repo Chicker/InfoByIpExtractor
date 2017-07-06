@@ -26,6 +26,7 @@ import scala.concurrent.duration._
 
 private[this] class GetInfoByIpServiceImpl(env: Env)
     extends GetInfoByIpService {
+
   private implicit val executionContext = env.executionContext
 
   private val countryCodesByIpProviders =
@@ -35,6 +36,7 @@ private[this] class GetInfoByIpServiceImpl(env: Env)
     ipAddress: String,
     fallbackTimeout: FiniteDuration = 10.seconds
   ): Future[String] = {
+
     val FALLBACK_COUNTRY_CODE = "lv"
 
     val g = Source.fromGraph(GraphDSL.create() { implicit builder =>
@@ -71,6 +73,7 @@ private[this] class GetInfoByIpServiceImpl(env: Env)
 }
 
 object GetInfoByIpServiceImpl {
+
   def apply(env: Env): GetInfoByIpService = {
     new GetInfoByIpServiceImpl(env)
   }

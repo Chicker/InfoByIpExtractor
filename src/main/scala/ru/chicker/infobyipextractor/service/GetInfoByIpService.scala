@@ -20,6 +20,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 trait GetInfoByIpService {
+
   def countryCode(ipAddress: String,
                   fallbackTimeout: FiniteDuration = 10.seconds): Future[String]
 }
