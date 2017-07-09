@@ -26,6 +26,8 @@ import scala.concurrent.{Await, Future}
 import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 
+import akka.event.Logging
+
 object productionEnv extends ProductionEnv
 
 object Main extends App {
@@ -33,6 +35,8 @@ object Main extends App {
   import productionEnv.executionContext
 
   override def main(args: Array[String]): Unit = {
+    val log = Logging.getLogger(productionEnv.actorSystem, Main.getClass)
+    
     try {
       val code = getCountryCode(args)
 
@@ -40,7 +44,7 @@ object Main extends App {
         case Success(res) =>
           res match {
             case Left(e) =>
-              println(s"Error occured when extracting country code: $e")
+              log.error("Error occured when extracting country code: {}", e)
             case Right(v) =>
               println(s"country code: $v")
           }
@@ -52,9 +56,8 @@ object Main extends App {
 
     } catch {
       case t: Throwable =>
-        println(
-          s"While executing program an error has been occurred: ${t.getLocalizedMessage}"
-        )
+        log.error("While executing program an error has been occurred: {}",
+                  t.getLocalizedMessage)
     }
   }
 

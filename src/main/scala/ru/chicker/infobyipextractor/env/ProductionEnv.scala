@@ -17,6 +17,7 @@
 package ru.chicker.infobyipextractor.env
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.stream.ActorMaterializer
 import cats.data.Reader
 import ru.chicker.infobyipextractor.infoprovider.{
@@ -45,11 +46,11 @@ trait ProductionEnv extends Env {
   def shutdown(): Future[Unit] = {
     httpWeb
       .map(h => {
-        println("shutting down the akka-http pool")
+        log.debug("Shutting down the akka-http pool")
         h.shutdown() andThen {
           case _ =>
-            println(
-              s"The connection pool is shutdown. Terminating actor system..."
+            log.debug(
+              "The connection pool is shutdown. Terminating actor system..."
             )
             actorSystem.terminate()
         }
@@ -64,4 +65,6 @@ trait ProductionEnv extends Env {
 
   override implicit val executionContext: ExecutionContext =
     actorSystem.dispatcher
+
+  private val log = Logging.getLogger(actorSystem, classOf[ProductionEnv])
 }
