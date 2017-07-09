@@ -23,7 +23,6 @@ import ru.chicker.infobyipextractor.service._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 
 import akka.event.Logging
@@ -34,31 +33,29 @@ object Main extends App {
 
   import productionEnv.executionContext
 
-  override def main(args: Array[String]): Unit = {
-    val log = Logging.getLogger(productionEnv.actorSystem, Main.getClass)
-    
-    try {
-      val code = getCountryCode(args)
+  val log = Logging.getLogger(productionEnv.actorSystem, Main.getClass)
 
-      code.value.onComplete {
-        case Success(res) =>
-          res match {
-            case Left(e) =>
-              log.error("Error occured when extracting country code: {}", e)
-            case Right(v) =>
-              println(s"country code: $v")
-          }
-        case Failure(v) => throw v
-      }
+  try {
+    val code = getCountryCode(args)
 
-      Await.ready(code.value.flatMap(_ => productionEnv.shutdown()),
-                  Duration.Inf)
-
-    } catch {
-      case t: Throwable =>
-        log.error("While executing program an error has been occurred: {}",
-                  t.getLocalizedMessage)
+    code.value.onComplete {
+      case Success(res) =>
+        res match {
+          case Left(e) =>
+            log.error("Error occured when extracting country code: {}", e)
+          case Right(v) =>
+            println(s"country code: $v")
+        }
+      case Failure(v) => throw v
     }
+
+    Await.ready(code.value.flatMap(_ => productionEnv.shutdown()),
+                Duration.Inf)
+
+  } catch {
+    case t: Throwable =>
+      log.error("While executing program an error has been occurred: {}",
+                t.getLocalizedMessage)
   }
 
   def getCountryCode(args: Array[String]): EitherT[Future, AppError, String] = {

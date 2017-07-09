@@ -17,9 +17,8 @@
 package ru.chicker.infobyipextractor.infoprovider
 
 import ru.chicker.infobyipextractor.env.Env
-import ru.chicker.infobyipextractor.util.HttpWeb
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class InfoByIpIp2IpProvider(env: Env) extends InfoByIpProvider {
   private implicit val executionContext = env.executionContext

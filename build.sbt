@@ -51,3 +51,15 @@ assemblyMergeStrategy in assembly := {
 }
 
 fork in compile := true
+
+// Adapted from Rob Norris' post at https://tpolecat.github.io/2014/04/11/scalac-flags.html
+scalacOptions in ThisBuild ++= Seq("-language:_",
+                                   "-deprecation",
+                                   "-encoding",
+                                   "UTF-8", // yes, this is 2 args
+                                   "-feature",
+                                   "-unchecked",
+                                   "-Xfatal-warnings",
+                                   "-Xlint",
+                                   "-Yno-adapted-args",
+                                   "-Ywarn-dead-code")
