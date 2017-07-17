@@ -17,34 +17,37 @@
 package ru.chicker.infobyipextractor.service
 
 import akka.stream.SourceShape
-import akka.stream.scaladsl.{GraphDSL, Keep, Merge, Sink, Source}
+import akka.stream.scaladsl.{GraphDSL, Keep, Sink, Source}
 import cats.data.Reader
 import ru.chicker.infobyipextractor.env.Env
+import ru.chicker.infobyipextractor.util.MergerWithFallbackAndTimeout
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-private[this] class GetInfoByIpServiceImpl(env: Env)
-    extends GetInfoByIpService {
 
-  private implicit val executionContext = env.executionContext
+private[this] class GetInfoByIpServiceImpl(env: Env)
+  extends GetInfoByIpService {
+
+  private implicit val actorSystem = env.actorSystem
+//  private implicit val executionContext = env.executionContext
 
   private val countryCodesByIpProviders =
     Seq(env.freeGeoIpProvider, env.ip2IpProvider)
 
   override def countryCode(
-    ipAddress: String,
-    fallbackTimeout: FiniteDuration = 10.seconds
-  ): Future[String] = {
+                            ipAddress: String,
+                            fallbackTimeout: FiniteDuration = 10.seconds
+                          ): Future[String] = {
 
     val FALLBACK_COUNTRY_CODE = "lv"
 
-    val g = Source.fromGraph(GraphDSL.create() { implicit builder =>
+    Source.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val inputsCount = countryCodesByIpProviders.size + 1
-
-      val merge = builder.add(Merge[String](inputsCount, eagerComplete = true))
+      val futCompleter = builder.add(MergerWithFallbackAndTimeout(
+        countryCodesByIpProviders.length,
+        FALLBACK_COUNTRY_CODE, fallbackTimeout))
 
       for (pIndex <- countryCodesByIpProviders.indices) {
 
@@ -54,21 +57,13 @@ private[this] class GetInfoByIpServiceImpl(env: Env)
           infoByIpProvider.map(_.countryCode(ipAddress))
 
         cCode.map { cc =>
-          Source.fromFuture(cc) ~> merge.in(pIndex)
+          Source.fromFuture(cc) ~> futCompleter.in(pIndex)
         }.run(env)
 
       }
 
-      Source.fromFuture(
-        akka.pattern.after(fallbackTimeout, env.actorSystem.scheduler)(
-          Future.successful(FALLBACK_COUNTRY_CODE)
-        )
-      ) ~> merge.in(inputsCount - 1)
-
-      SourceShape(merge.out)
-    })
-
-    g.toMat(Sink.head[String])(Keep.right).run()(env.materializer)
+      SourceShape(futCompleter.out)
+    }).toMat(Sink.head[String])(Keep.right).run()(env.materializer)
   }
 }
 
