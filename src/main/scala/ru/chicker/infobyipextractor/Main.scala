@@ -42,7 +42,7 @@ object Main extends App {
       case Success(res) =>
         res match {
           case Left(e) =>
-            log.error("Error occured when extracting country code: {}", e)
+            log.error("Error occurred when extracting country code: {}", e)
           case Right(v) =>
             println(s"country code: $v")
         }
